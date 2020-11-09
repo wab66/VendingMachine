@@ -30,6 +30,7 @@ public class VendingMachineImpl implements IVendingMachine {
     public Map<Item,Integer> getAllInventoryItemsBalances(){
         return itemInventory.getItemsList();
     }
+
     //rc01a
     public int getNominatedInventoryCoinBalance(String coinName){
         Coin coin = Coin.valueOf(coinName.toUpperCase());
@@ -98,7 +99,7 @@ public class VendingMachineImpl implements IVendingMachine {
         // rc01m
         //List<Coin> change = collectChange();
         List<Coin> changeToDispense = collectChange();
-        // rc01a
+        // rc01a - ToDo: why have you done this? - i think it was in the coins method
         dispenseItem();
 
         //rc01m
@@ -116,7 +117,7 @@ public class VendingMachineImpl implements IVendingMachine {
 
         }
         long remainingBalance = itemToDispense.getPrice() - totalAmountPaid;
-        throw new InsufficientPaymentException("Price not fully paid, remaining : ", remainingBalance);
+        throw new InsufficientPaymentException("Item '" + itemToDispense.getItemName() + "' purchased for Price '" + itemToDispense.getPrice() + "' not fully paid, remaining : ", remainingBalance);
     }
 
     //rc01a
