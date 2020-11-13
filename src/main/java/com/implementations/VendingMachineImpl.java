@@ -1,15 +1,21 @@
 package com.implementations;
 
-import com.domain.Inventory;
 import com.api.IVendingMachine;
 import com.domain.Coin;
+import com.domain.Inventory;
 import com.domain.Item;
 import com.exceptions.InsufficientChangeException;
 import com.exceptions.InsufficientPaymentException;
 import com.exceptions.OutOfStockException;
 import com.util.ReturnBucket;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+//
+// import sun.jvm.hotspot.oops.ReceiverTypeData;
 
 public class VendingMachineImpl implements IVendingMachine {
 
@@ -29,6 +35,22 @@ public class VendingMachineImpl implements IVendingMachine {
 
     public Map<Item,Integer> getAllInventoryItemsBalances(){
         return itemInventory.getItemsList();
+    }
+
+    public boolean isItemReadyForDispense(){
+        boolean result = true;
+        try {
+            if (itemToDispense.equals(null)) {
+                result = false;
+            }
+        } catch (NullPointerException e) {
+            result = false;
+        }
+        return result;
+    }
+
+    public Item getItemToDispense(){
+        return itemToDispense;
     }
 
     //rc01a
@@ -54,13 +76,25 @@ public class VendingMachineImpl implements IVendingMachine {
     }
 
     //rc01a
-    public void addInventoryCoins(Coin coin, int coinQty){
+    public void initialiseInventoryCoin(Coin coin, int coinQty){
         cashInventory.put(coin, coinQty);
     }
 
-    public void addInventoryItems(Item item, int itemQty){
+    public void intialiseInventoryItem(Item item, int itemQty){
         itemInventory.put(item, itemQty);
     }
+
+//    private boolean isItemToDispenseEmpty() {
+//        boolean result = false;
+//        try {
+//            if (itemToDispense.equals(null)) {
+//                result = true;
+//            }
+//        } catch (NullPointerException e) {
+//            result = true;
+//        }
+//        return result;
+//    }
 
     private void initialiseVendingMachine(){
         //initialize machine with 5 coins of each denomination
@@ -91,15 +125,11 @@ public class VendingMachineImpl implements IVendingMachine {
 
     @Override
     public ReturnBucket<Item, List<Coin>> collectItemAndChange() {
-        //rc01m
-        //Item item = collectItem();
         Item itemToDispense = collectItem();
         totalSales = totalSales + this.itemToDispense.getPrice();
 
-        // rc01m
-        //List<Coin> change = collectChange();
         List<Coin> changeToDispense = collectChange();
-        // rc01a - ToDo: why have you done this? - i think it was in the coins method
+        // rc01a -  it was in the coins method this will empty the item
         dispenseItem();
 
         //rc01m
@@ -124,6 +154,12 @@ public class VendingMachineImpl implements IVendingMachine {
     private void dispenseItem(){
         itemToDispense = null;
         //return currentItem;
+    }
+    //rc01a
+
+    //rc01a
+    public long getTotalAmountPaid(){
+        return totalAmountPaid;
     }
 
     private List<Coin> collectChange() {

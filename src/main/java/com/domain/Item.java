@@ -4,7 +4,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 public enum Item {
-    COKE("Coca Cola", 25), PEPSI("Pepsi", 35), SODA("SODA", 45);
+    COKE("Coke", 25), PEPSI("Pepsi", 35), SODA("Soda", 45);
 
     String item;
     long price;
