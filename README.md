@@ -78,7 +78,7 @@ I have included my POM file which you could copy (feel free to fix the issue of 
     * Double click the report and it will be opened in the main window
       * when you mouse over the html code you will get a floating list of Browser icons, which you can click to open the html file in a browser
  
- * NB: Just on a side note - I had to work pretty hard to get this far, but i have to say I did really enjoy it and learned a lot.  Thank you for the opportunity and sorry for the lateness.  I look forward to hearing back from you and poosibly discussing my project.
+ * NB: Just on a side note - I had to work pretty hard to get this far, but i have to say I did really enjoy it and learned a lot.  Thank you for the opportunity and sorry for the lateness.  I look forward to hearing back from you and possibly discussing my project.
  
  
  
