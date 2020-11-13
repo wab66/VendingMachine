@@ -2,8 +2,6 @@ package com.step_definitions;
 
 import com.domain.Coin;
 import com.domain.Item;
-import com.exceptions.InsufficientChangeException;
-import com.exceptions.InsufficientPaymentException;
 import com.exceptions.OutOfStockException;
 import com.implementations.VendingMachineImpl;
 import com.util.KnowsTheDomain;
@@ -14,10 +12,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.junit.Assert;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 //import org.graalvm.compiler.debug.CSVUtil;
 
@@ -27,15 +22,17 @@ public class VendingMachinePurchaseSteps {
     int expectedCountOfCoinsToEnter = 0;
     int expectedNumberOfCoinsForChange = 0;
 
-
-    int expectedCurrentTotalCoins = 0;
-    int expectedCurrentTotalItems = 0;
+    //int expectedCurrentTotalCoins = 0;
+    //int expectedCurrentTotalItems = 0;
 
     int expectedTotalAmountPaid;
     int expectedTotalChangeAmountDue;
 
-    int vmCurrentTotalCoins = 0;
-    int vmCurrentTotalItems = 0;
+    //int vmCurrentTotalCoins = 0;
+    //int vmCurrentTotalItems = 0;
+
+    Map<Coin, Integer> listExpectedCoinTotals = new HashMap<Coin, Integer>();
+    Map<Item, Integer> listExpectedItemTotals = new HashMap<Item, Integer>();
 
     Item itemToPurchase;
     List<Coin> expectedListOfCoinsForPayment;
@@ -54,10 +51,11 @@ public class VendingMachinePurchaseSteps {
         dtLoadVendingMachineStock(dt);
     }
 
-    @Given("the vending machines (.*?) stock has been verified")
-    public void theVendingMachineCoinStockVerified(String inventoryType) {
-        System.out.println("Total coin count: " + expectedCurrentTotalCoins);
-    }
+//    @Given("the vending machines (.*?) stock has been verified")
+//    public void theVendingMachineStockVerified(String inventoryType) {
+//        System.out.println("Total inventory '" + inventoryType + "' count: " +
+//                getVMCurrentTotalCoinsBalance()); //expectedCoinTotals
+//    }
 
     @Given("^the (.*?) denomination has the following (.*?) balance?")
     public void theDenominationHasTheFollowingBalance(String denomination, String denominationBalance) {
@@ -78,9 +76,10 @@ public class VendingMachinePurchaseSteps {
     }
 
     //ToDo:
-    @When("^the vending machine (.*?) inventory is loaded with new (.*?)?")
-    public void theVendingMachineIsLoadedWithNewItemsQty(String inventoryType, String inventoryItemAndQuantities) {
-
+    @When("^the vending machine (.*?) inventory is reset with new quantities (.*?)?")
+    public void theVendingMachineIsLoadedWithNewItemQty(String inventoryType, String inventoryItemAndQuantities) {
+        reStockCoins(inventoryType, inventoryItemAndQuantities);
+        System.out.println("break");
     }
 
     @When("^the user accepts transaction and expects (n?o? ?)item?")
@@ -119,8 +118,8 @@ public class VendingMachinePurchaseSteps {
         getCoinsForPurchase(amountPaid);
 
         // ------------- Before Insert Coins payment - Get all Inventory Qtys (Coins/Items) -------------
-        vmCurrentTotalCoins = vendingMachine.getInventoryCoinsBalance();
-        vmCurrentTotalItems = vendingMachine.getInventoryItemsBalance();
+        int vm_CurrentTotalCoins = vendingMachine.getInventoryCoinsBalance();
+        int vm_CurrentTotalItems = vendingMachine.getInventoryItemsBalance();
         vmInsertCoins(expectedListOfCoinsForPayment);
 
         // ------------- After Insert Coins payment - Get all Inventory Qtys (Coins/Items) -------------
@@ -129,18 +128,34 @@ public class VendingMachinePurchaseSteps {
 
         //ToDo: these need to be moved out of here to a THEN step
         // Assert coins were added - updated the Coins Inv
-        Assert.assertTrue("", (vmCurrentTotalCoins + expectedCountOfCoinsToEnter) == afterInsertTotalCoinsBalance);
+        Assert.assertTrue("", (vm_CurrentTotalCoins + expectedCountOfCoinsToEnter) == afterInsertTotalCoinsBalance);
         // Assert no items dispatched yet
-        Assert.assertTrue("", vmCurrentTotalItems == afterInsertTotalItemsBalance);
+        Assert.assertTrue("", vm_CurrentTotalItems == afterInsertTotalItemsBalance);
     }
 
     //ToDo:
     @Then("^the total (.*?) stock will be updated?")
-    public void theTotalStockWillBeUpdated(Item inventoryType) {
+    public void theTotalStockWillBeUpdated(String inventoryType) {
+        System.out.println("ToDo: compare the before totals and then new totals");
+        int vm_CurrentTotalCoins = vendingMachine.getInventoryCoinsBalance();
+        int vm_CurrentTotalItems = vendingMachine.getInventoryItemsBalance();
+
+        int expectedCoinstotal = 0;
+        for(int coinTotal : listExpectedCoinTotals.values()){
+            expectedCoinstotal += coinTotal;
+        }
+        Assert.assertTrue("Actual VM coin count '" + vm_CurrentTotalCoins + "' is equal to expected '" +
+                expectedCoinstotal + "', ", vm_CurrentTotalCoins == expectedCoinstotal);
+
+        int expectedItemstotal = 0;
+        for(int itemTotal : listExpectedItemTotals.values()){
+            expectedItemstotal += itemTotal;
+        }
+        Assert.assertTrue("Actual VM item count '" + vm_CurrentTotalItems + "' is equal to expected '" +
+                expectedItemstotal + "', ", vm_CurrentTotalItems == expectedItemstotal);
 
     }
 
-    // Check we have no item to be dispensed - [ce]?[ar]?[nr]?[co]?[er]?[ls]?[l]?[e]?[d]?
     @Then("^the item (.*?) will not be dispensed if (errors|cancelled)?")
     public void theItemWillNotBeDispensed(String itemName, String reasonForNonDispense) {
 
@@ -168,18 +183,7 @@ public class VendingMachinePurchaseSteps {
                             item.getItemName() + "'.", true);
                 }
             }
-
-
         }
-//
-//        // there will be no item to dispense, only once the item has been dispensed,
-//        // otherwise if item not yet dispensed, then it will still have the item in there
-//        Item item = vendingMachine.getItemToDispense();
-//        if(item==null){
-//            Assert.assertFalse("Expected no item to be dispensed.  Actual: the item to " +
-//                    "dispense field is now empty, which means it has been dispensed in error. '" +
-//                            item.getItemName() + "'.", true);
-//        }
     }
 
     @Then("^the item (.*?) will be dispensed?")
@@ -254,27 +258,6 @@ public class VendingMachinePurchaseSteps {
 //    public void theUserWillReceiveItemWithChangeOwed(String itemName, String changeOwed) {
 
 
-    // -----------------------------------------------------------------------------------------------------------
-    // ToDo: For a differernt feature in the future
-    public void getVMBalances() {
-        // Code for another feature
-        // ToDo: 2. Get stock & coin levels before items dispensed via ReturnBucket  - or do above???
-        int startingTotalCoinsBalance = vendingMachine.getInventoryCoinsBalance();
-        int startingTotalItemsBalance = vendingMachine.getInventoryItemsBalance();
-
-        // ToDo: 4. Might need some DI to achieve this
-        vendingMachine.collectItemAndChange();
-
-        int currentTotalCoinsBalance = vendingMachine.getInventoryCoinsBalance();
-        int currentTotalItemsBalance = vendingMachine.getInventoryItemsBalance();
-        // ToDo: 3. Get stock levels after the purchase
-        // ToDo: 5. Also may need to check if there is still any item/coins to dispense - this should be clear
-        System.out.println("");
-        // ToDo: need to know the total coins added for purchases
-        // ToDo: In the Given we need to accumulate these and inject here
-        Assert.assertEquals(startingTotalCoinsBalance, currentTotalCoinsBalance);
-    }
-
     private void dtLoadVendingMachineStock(DataTable dt) {
 
         List<Map<String, String>> dtLine = dt.asMaps(String.class, String.class);
@@ -286,30 +269,82 @@ public class VendingMachinePurchaseSteps {
             if (getInventoryType(inventory).equals("coin")) {
                 Coin coin = Coin.valueOf(inventory.toUpperCase());
                 initialiseCoin(coin, invAmount);
+                listExpectedCoinTotals.put(coin,invAmount);
             } else if (getInventoryType(inventory).equals("item")) {
                 Item item = Item.valueOf(inventory.toUpperCase());
                 initialiseItem(item, invAmount);
+                listExpectedItemTotals.put(item,invAmount);
             } else {
                 Assert.fail("** FEATURE DATA ERROR - Invalid Vending Machine Inventory Type: '" + inventory + "'.");
             }
         }
     }
 
-    // ToDo:
+    private void reStockCoins(String inventoryType, String listInventoryAmount) {
+
+        // reset each individual inventory when you get them first time, incase we are not resetting one of them
+        //expectedCurrentTotalCoins = 0;
+        //expectedCurrentTotalItems = 0;
+
+        String[] arrInventoryAndQtyList = listInventoryAmount.trim().split(",");
+        //List<Coin> listExpectedNumberOfCoinsOwed = new ArrayList<Coin>();
+        for (String i : arrInventoryAndQtyList) {
+            System.out.println("i = " + i);
+            String invType = "";
+            int invQty = 0;
+            String[] arrInventoryAndQty = i.trim().split("=");
+            for(int c=0; c<arrInventoryAndQty.length; c++){
+                if(c==0){
+                    // Get coin name or item name
+                    invType = arrInventoryAndQty[c].trim().toLowerCase();
+                }
+                if(c==1){
+                    invQty = Integer.parseInt(arrInventoryAndQty[c].trim());
+                    if (getInventoryType(invType).equals("coin")) {
+                        Coin coin = Coin.valueOf(invType.toUpperCase());
+                        initialiseCoin(coin, invQty);
+                        listExpectedCoinTotals.put(coin,invQty);
+                    } else if (getInventoryType(invType).equals("item")) {
+                        Item item = Item.valueOf(invType.toUpperCase());
+                        initialiseItem(item, invQty);
+                        listExpectedItemTotals.put(item,invQty);
+                    } else {
+                        Assert.fail("** FEATURE DATA ERROR - Invalid Vending Machine Inventory Type: '" + invType + "'.");
+                    }
+                }
+            }
+        }
+    }
+
+    private int getVMCurrentTotalCoinsBalance() {
+        int vmTotalAllCoins = 0;
+        for (int coinTotal : listExpectedCoinTotals.values()) {
+            vmTotalAllCoins += coinTotal;
+        }
+        return vmTotalAllCoins;
+    }
+
+    private int getVMCurrentTotalItemsBalance() {
+        int vmTotalAllItems = 0;
+        for (int coinTotal : listExpectedItemTotals.values()) {
+            vmTotalAllItems += coinTotal;
+        }
+        return vmTotalAllItems;
+    }
+
     private void initialiseItem(Item item, int amount) {
         if (isValidItemName(item.getItemName().toUpperCase())) {
             vendingMachine.intialiseInventoryItem(item, amount);
-            expectedCurrentTotalItems += amount;
+            //expectedCurrentTotalItems += amount;
         }
     }
 
     private void initialiseCoin(Coin coin, int amount) {
         if (isValidCoinName(coin.getCoinName().toUpperCase())) {
             vendingMachine.initialiseInventoryCoin(coin, amount);
-            expectedCurrentTotalCoins += amount;
+            //expectedCurrentTotalCoins += amount;
         }
     }
-    //
 
     private String getInventoryType(String inventoryName) {
         String isValid = "";
@@ -366,7 +401,6 @@ public class VendingMachinePurchaseSteps {
         }
     }
 
-
     private boolean isValidItem(Item item) {
         boolean isValid = false;
         try {
@@ -383,7 +417,6 @@ public class VendingMachinePurchaseSteps {
         return isValid;
     }
 
-    // ToDo:
     private boolean isValidCoin(Coin coin) {
         boolean isValid = false;
         try {
@@ -399,15 +432,6 @@ public class VendingMachinePurchaseSteps {
         }
         return isValid;
     }
-
-    // ToDo:
-//    private boolean isValidVMInventory(Coin coin){
-//        String inventoryType = list.get(i).get("inventoryType").trim();
-//        String inventory = list.get(i).get("inventory").trim();
-//        String amount = list.get(i).get("amount").trim();
-//        int invAmount = Integer.parseInt(amount);
-//        if(inventoryType.equalsIgnoreCase("coin")){
-//    }
 
     private int loadVendingMachineDenomination(Coin coin, int coinQty) {
         try {
@@ -427,7 +451,6 @@ public class VendingMachinePurchaseSteps {
         return 0;
     }
 
-    //ToDo: may need to nominate which exception we need
     private boolean acceptTransaction(boolean expectItem) {
         boolean isThereATransaction = false;
         if (expectItem) {
@@ -442,11 +465,6 @@ public class VendingMachinePurchaseSteps {
         }
         return false;
     }
-
-
-
-
-
 
     private void getItemForPurchase(String itemName){
         try{

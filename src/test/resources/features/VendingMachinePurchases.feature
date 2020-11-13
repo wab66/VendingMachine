@@ -95,22 +95,21 @@
         | PEPSI    | quarter,dime                      |
         | SODA     | quarter,quarter                   |
 
-#
-# #ToDo:
-##   As a vending machine supplier
-##   I want to be able to reset the machine
-##   So that I can update the items and coins inventory
-#    Scenario Outline: Vending Machine <inventoryType> inventory can be reset by Supplier
-#      Given the vending machines coin stock has been verified
-#      When the vending machine <inventoryType> inventory is loaded with new <inventoryItemAndQuantities>
-#      Then the total coin stock will be updated
-#
-#      Examples:
-#        | inventoryType | inventoryItemAndQuantities           |
-#        | coin          | penny=25,nickel=3,dime=10,quarter=40 |
-#        | items         | coke=5,pepsi=10,soda=15              |
-#
+
+#   As a vending machine supplier
+#   I want to be able to reset the machine
+#   So that I can update the items and coins inventory
+    Scenario Outline: Vending Machine <inventoryType> inventory can be reset by Supplier
+      When the vending machine <inventoryType> inventory is reset with new quantities <inventoryItemAndQuantities>
+      Then the total <inventoryType> stock will be updated
+
+      Examples:
+        | inventoryType | inventoryItemAndQuantities           |
+        | coin          | penny=25,nickel=3,dime=10,quarter=0  |
+        | item          | coke=5,pepsi=0,soda=15               |
+
 ##    ToDo: also verify the individual coins have updated accordingly
+    ##    ToDo: also verify the buying stock adds to correct new totals
 ##    Scenario Outline: Vending Machine coins Inventory can be reset by Supplier
 #
 #    Scenario Outline: Vending Machine items Inventory can be reset by Supplier
@@ -138,5 +137,3 @@
 #    Scenario : User cannot purchase a drink in stock, when paying with the any amount, when there is not enough change to be returned, that adds up to the due amount
 #ToDo:
     #Scenario : ???Changing your product choice when not enough money paid - Eg: paid 30,request pepsi, then change to coke
-
-
